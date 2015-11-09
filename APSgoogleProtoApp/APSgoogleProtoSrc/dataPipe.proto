@@ -1,0 +1,32 @@
+//  dataPipe.proto  - message practice with Google Protocol Buffers
+//  Authors: Russell Woods
+//           Matthew Moore
+//     Date: 10/29/15
+
+syntax = "proto3" ;
+
+package detectorTest ;
+
+message MyMessage {
+	int32  numDimData = 1 ;		// Number of data array dimensions included in "data_dimensions"
+	string dimData = 2 ;		// Array dimensions, comma separated
+	enum ArrayDataType {
+	  UINT8 = 0 ;
+	  INT8 = 1 ;
+	  UINT16 = 2 ;
+	  INT16 = 3 ;
+	  UINT32 = 4 ;
+	  INT32 = 5 ;
+	  INT64 = 6 ;
+	  FLOAT32 = 7 ;
+	  FLOAT64 = 8 ;
+	}
+
+	ArrayDataType dataType = 3 ;// Data type for array stored in valuesData
+	bytes valuesData = 4 ;		// string of bytes
+
+	int32  numAttrs = 5 ;		// Number of attributes included
+	string nameAttrs = 6 ;		// Ordered list of attribute names, comma separated
+	string typeAttrs = 7 ;		// Ordered list of attribute types, comma separated
+	bytes  valuesAttrs = 8 ;	// Byte stream of attributes? Or strings?
+}

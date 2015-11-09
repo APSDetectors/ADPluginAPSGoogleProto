@@ -1,0 +1,6 @@
+#=================================================================#
+# Template file: NDHexMap.template
+
+include "NDPluginBase.template"
+
+

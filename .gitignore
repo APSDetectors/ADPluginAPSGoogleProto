@@ -1,0 +1,14 @@
+bin
+lib
+include
+*~
+envPaths*
+cdCommands
+dllPath.bat
+auto_settings.sav*
+configure/*.local
+O.*/
+*~
+*.swp
+
+APSgoogleProtoSupport/protobuf-master.zip
