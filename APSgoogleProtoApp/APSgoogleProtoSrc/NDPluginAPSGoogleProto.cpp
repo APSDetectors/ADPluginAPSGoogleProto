@@ -14,23 +14,45 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
-
 #include <epicsString.h>
 #include <epicsMutex.h>
 #include <iocsh.h>
-
 #include <asynDriver.h>
-
 #include <epicsExport.h>
-#include "NDPluginDriver.h"
 #include "NDPluginAPSGoogleProto.h"
-#include "dataPipe.pb.h"
 #include <string>
 #include <fstream>
 #include <iostream>
 
 
+//Copied in from NDFileNull.cpp
+asynStatus NDPluginAPSGoogleProto::openFile(const char *fileName, NDFileOpenMode_t openMode, NDArray *pArray)
+{
+    return(asynSuccess);
+}
+
+/** Writes single NDArray to the Null file.
+  * \param[in] pArray Pointer to the NDArray to be written
+  */
+asynStatus NDPluginAPSGoogleProto::writeFile(NDArray *pArray)
+{
+    return(asynSuccess);
+}
+
+/** Reads single NDArray from a Null file; NOT CURRENTLY IMPLEMENTED.
+  * \param[in] pArray Pointer to the NDArray to be read
+  */
+asynStatus NDPluginAPSGoogleProto::readFile(NDArray **pArray)
+{
+    return asynError;
+}
+
+
+/** Closes the Null file. */
+asynStatus NDPluginAPSGoogleProto::closeFile()
+{
+    return asynSuccess;
+}
 
 
 /** Callback function that is called by the NDArray driver with new NDArray data.
@@ -50,8 +72,8 @@ void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
   /* Call the base class method */
   NDPluginDriver::processCallbacks(pArray);
 
-  /* Do the computationally expensive code with the lock released */
-  this->unlock();
+  
+  //this->unlock();
   
   /* Copy Array */
   
@@ -60,16 +82,13 @@ void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
   this->getAttributes(pScratchNDAttrList);
   pArray->pAttributeList->copy(pScratchNDAttrList);
   
-  this->lock();
+  //this->lock();
   
   
   pScratch->getInfo(&arrayInfo);
-  //creates byte array from NDArray data
-  char charArray[(arrayInfo.totalBytes/sizeof(char))];
-  memcpy(&charArray, reinterpret_cast<char*>(pScratch->pData),arrayInfo.totalBytes);
   
-  outingMessage.set_valuesdata(charArray);
-  outingMessage.set_numdimdata(pScratch->ndims);
+  outgoingMessage.set_valuesdata(pScratch->pData,arrayInfo.totalBytes);
+  outgoingMessage.set_numdimdata(pScratch->ndims);
   
   // creates array dimension string from NDArray info
   std::string dimStr="";
@@ -79,39 +98,38 @@ void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
     size=sprintf(tempStr,"%d,",pScratch->dims[i].size);
     dimStr.append(tempStr, size);  
   }
-  outingMessage.set_dimdata(dimStr);
+  outgoingMessage.set_dimdata(dimStr);
   
   //Sets NDArray Datatype info 
   switch (pScratch->dataType) {
       case NDInt8:
-        outingMessage.set_datatype("INT8");
+        outgoingMessage.set_datatype("INT8");
         break;
       case NDUInt8:
-        outingMessage.set_datatype("UINT8");
+        outgoingMessage.set_datatype("UINT8");
         break;
       case NDInt16:
-        outingMessage.set_datatype("INT16");
+        outgoingMessage.set_datatype("INT16");
         break;
       case NDUInt16:
-        outingMessage.set_datatype("UINT16");
+        outgoingMessage.set_datatype("UINT16");
         break;
       case NDInt32:
-        outingMessage.set_datatype("INT32");
+        outgoingMessage.set_datatype("INT32");
         break;
       case NDUInt32:
-        outingMessage.set_datatype("UINT32");
+        outgoingMessage.set_datatype("UINT32");
         break;
       case NDFloat32:
-        outingMessage.set_datatype("FLOAT32");
+        outgoingMessage.set_datatype("FLOAT32");
         break;
       case NDFloat64:
-        outingMessage.set_datatype("FLOAT64");
+        outgoingMessage.set_datatype("FLOAT64");
         break;
     }
     
   //NDAttribute loading
   NDAttribute *CurrentAttr; 
-  //NDAttribute *pAttribute;
   NDAttrDataType_t CurrentAttrDataType;
   int AttributeCnt = 0;
   std::string AttrNames="",AttrTypes="", AttrValues=""; 
@@ -120,13 +138,12 @@ void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
   char charValue[(sizeof(epicsFloat64)/sizeof(char))];
   
   CurrentAttr = pScratchNDAttrList->next(NULL); //Get First Attribute
-  printf("There are %d attributes.\n",pScratchNDAttrList->count());
-  printf("Gets first Attr...\n");
+
   while (CurrentAttr !=NULL){
     AttributeCnt++;
     size=sprintf(tempStr,"%s,",CurrentAttr->getName());
     AttrNames.append(tempStr,size);
-    //std::cout << AttrNames << endl;
+
     CurrentAttr->getValueInfo(&CurrentAttrDataType, &attrDataSize);
     
     
@@ -178,35 +195,36 @@ void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
     }
     
     CurrentAttr = pScratchNDAttrList->next(CurrentAttr); //Get Next Attribute
-    printf("Gets another Attr...\n");
+
   }
-  printf("Done with Attr...\n");
-  outingMessage.set_nameattrs(AttrNames);
-  outingMessage.set_numattrs(AttributeCnt);
-  outingMessage.set_typeattrs(AttrTypes);
+
+  outgoingMessage.set_nameattrs(AttrNames);
+  outgoingMessage.set_numattrs(AttributeCnt);
+  outgoingMessage.set_typeattrs(AttrTypes);
+  outgoingMessage.set_valuesattrs(AttrValues);
+  
   
   std::fstream output("SIM_outdata.dat", std::ios::out | std::ios::trunc | std::ios::binary) ;
-  outingMessage.SerializeToOstream(&output) ;
+  outgoingMessage.SerializeToOstream(&output) ;
   
   int arrayCallbacks = 0;
   getIntegerParam(NDArrayCallbacks, &arrayCallbacks);
   if (arrayCallbacks == 1) {
-    //getAttributes(pTransformed->pAttributeList);
     this->unlock();
-    //printf("Doing Callback\n");
-    //doCallbacksGenericPointer(pTransformed, NDArrayData, 0);
+    doCallbacksGenericPointer(pScratch, NDArrayData, 0);
     this->lock();
   }
-
+  if (NULL != pScratch)
+    pScratch->release();
   callParamCallbacks();
 }
 
 
 
 
-/** Constructor for NDPluginHexMap; most parameters are simply passed to NDPluginDriver::NDPluginDriver.
+/** Constructor for NDPluginAPSGoogleProto; most parameters are simply passed to NDPluginDriver::NDPluginDriver.
   * After calling the base class constructor this method sets reasonable default values for all of the
-  * HexMap parameters.
+  * APS Google Protocol Bruffer parameters.
   * \param[in] portName The name of the asyn port driver to be created.
   * \param[in] queueSize The number of NDArrays that the input queue for this plugin can hold when
   *      NDPluginDriverBlockingCallbacks=0.  Larger queues can decrease the number of dropped arrays,
@@ -227,23 +245,20 @@ NDPluginAPSGoogleProto::NDPluginAPSGoogleProto(const char *portName, int queueSi
              const char *NDArrayPort, int NDArrayAddr, int maxBuffers, size_t maxMemory,
              int priority, int stackSize)
   /* Invoke the base class constructor */
-  : NDPluginDriver(portName, queueSize, blockingCallbacks,
-                   NDArrayPort, NDArrayAddr, 1, NUM_HEXMAP_PARAMS, maxBuffers, maxMemory,
+  /*: NDPluginFile(portName, queueSize, blockingCallbacks,
+                   NDArrayPort, NDArrayAddr, 1, NUM_APS_GPB_PARAMS, maxBuffers, maxMemory,
                    asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
                    asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
                    ASYN_MULTIDEVICE, 1, priority, stackSize)
+                   */
+  : NDPluginFile(portName, queueSize, blockingCallbacks,
+                   NDArrayPort, NDArrayAddr, 1, NUM_APS_GPB_PARAMS,
+                   2, 0, asynGenericPointerMask, asynGenericPointerMask, 
+                   ASYN_CANBLOCK, 1, priority, stackSize)
 {
   static const char *functionName = "NDPluginAPSGoogleProto";
-  int i;
-  
-  createParam(NDPluginHexMapTypeString,          asynParamInt32,   &NDPluginHexMapType_);
-  //createParam(NDPluginHexMapMaxSizeXString,      asynParamInt32,   &NDPluginHexMapMaxSizeX);
-  //createParam(NDPluginHexMapMaxSizeYString,      asynParamInt32,   &NDPluginHexMapMaxSizeY);
-  createParam(NDPluginHexMapMaxNewSizeXString,   asynParamInt32,   &NDPluginHexMapMaxNewSizeX);
-  createParam(NDPluginHexMapMaxNewSizeYString,   asynParamInt32,   &NDPluginHexMapMaxNewSizeY);
-  createParam(NDPluginHexMapHexPitchString,      asynParamFloat64, &NDPluginHexMapPitch);
-  
-  for (i = 0; i < ND_ARRAY_MAX_DIMS; i++) {
+
+  for (int i = 0; i < ND_ARRAY_MAX_DIMS; i++) {
     this->userDims_[i] = i;
   }
   

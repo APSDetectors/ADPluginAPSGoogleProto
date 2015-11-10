@@ -4,21 +4,14 @@
 #include <epicsTypes.h>
 #include <asynStandardInterfaces.h>
 
-#include "NDPluginDriver.h"
+#include "NDPluginFile.h"
 #include "dataPipe.pb.h"
 
-/** Map parameter enums to strings that will be used to set up EPICS databases
-  */
-#define NDPluginHexMapTypeString               "HEXMAP_TYPE"           /* (asynInt32,   r/o) Mapoing type: None, HexToSquare, SquareToHex */
-#define NDPluginHexMapMaxNewSizeXString        "NEW_SIZE_X"            /* (asynInt32,   r/o) Finish size of image in X dimension */
-#define NDPluginHexMapMaxNewSizeYString        "NEW_SIZE_Y"            /* (asynInt32,   r/o) Finish size of image in Y dimension */
-#define NDPluginHexMapHexPitchString           "HEX_PITCH"             /* (asynFlt64,   r/o) Pixel Pitch of Detector */
 
-
-static const char* pluginName = "NDPluginHexMap";
+static const char* pluginName = "NDPluginAPSGoogleProto";
 
 /** Perform transformations (rotations, flips) on NDArrays.   */
-class epicsShareClass NDPluginAPSGoogleProto : public NDPluginDriver {
+class epicsShareClass NDPluginAPSGoogleProto : public NDPluginFile {
 public:
     NDPluginAPSGoogleProto(const char *portName, int queueSize, int blockingCallbacks,
                  const char *NDArrayPort, int NDArrayAddr,
@@ -26,19 +19,18 @@ public:
                  int priority, int stackSize);
     /* These methods override the virtual methods in the base class */
     void processCallbacks(NDArray *pArray);
+    virtual asynStatus openFile(const char *fileName, NDFileOpenMode_t openMode, NDArray *pArray);
+    virtual asynStatus readFile(NDArray **pArray);
+    virtual asynStatus writeFile(NDArray *pArray);
+    virtual asynStatus closeFile();
 
 protected:
-    int NDPluginHexMapType_;
-    #define FIRST_HEXMAP_PARAM NDPluginHexMapType_
-    int NDPluginHexMapMaxNewSizeX;
-    int NDPluginHexMapMaxNewSizeY;
-    int NDPluginHexMapPitch;
-    #define LAST_HEXMAP_PARAM NDPluginHexMapPitch
+    //None
 
 private:
     size_t userDims_[ND_ARRAY_MAX_DIMS];
-    detectorTest::MyMessage outingMessage;
+    detectorTest::MyMessage outgoingMessage;
 };
-#define NUM_HEXMAP_PARAMS ((int)(&LAST_HEXMAP_PARAM - &FIRST_HEXMAP_PARAM + 1))
+#define NUM_APS_GPB_PARAMS 0
 
 #endif
