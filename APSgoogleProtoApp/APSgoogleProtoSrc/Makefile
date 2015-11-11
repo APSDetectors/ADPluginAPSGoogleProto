@@ -21,7 +21,7 @@ INC += dataPipe.pb.h
 LIBRARY_IOC += NDPluginAPSGoogleProto
 
 NDPluginAPSGoogleProto_SRCS += NDPluginAPSGoogleProto.cpp
-NDPluginAPSGoogleProto_SRCS += dataPipe.pb.cc
+NDPluginAPSGoogleProto_SRCS += APSdet_GPB.pb.cc
 
 include $(ADCORE)/ADApp/commonLibraryMakefile
 

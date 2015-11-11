@@ -57,7 +57,8 @@ asynStatus NDPluginAPSGoogleProto::writeFile(NDArray *pArray)
   
   outgoingMessage.set_valuesdata(pArray->pData,arrayInfo.totalBytes);
   outgoingMessage.set_numdimdata(pArray->ndims);
-  
+  outgoingMessage.set_unquieid(pArray->uniqueId);
+  outgoingMessage.set_timestamp(pArray->timeStamp);
   // creates array dimension string from NDArray info
   std::string dimStr="";
   char tempStr[50];
