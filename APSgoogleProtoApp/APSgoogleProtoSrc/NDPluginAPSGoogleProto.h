@@ -3,9 +3,9 @@
 
 #include <epicsTypes.h>
 #include <asynStandardInterfaces.h>
-
+#include <fstream>
 #include "NDPluginFile.h"
-#include "dataPipe.pb.h"
+#include "APSdet_GPB.pb.h"
 
 
 static const char* pluginName = "NDPluginAPSGoogleProto";
@@ -18,7 +18,7 @@ public:
                  int maxBuffers, size_t maxMemory,
                  int priority, int stackSize);
     /* These methods override the virtual methods in the base class */
-    void processCallbacks(NDArray *pArray);
+    //void processCallbacks(NDArray *pArray);
     virtual asynStatus openFile(const char *fileName, NDFileOpenMode_t openMode, NDArray *pArray);
     virtual asynStatus readFile(NDArray **pArray);
     virtual asynStatus writeFile(NDArray *pArray);
@@ -29,7 +29,8 @@ protected:
 
 private:
     size_t userDims_[ND_ARRAY_MAX_DIMS];
-    detectorTest::MyMessage outgoingMessage;
+    APSdet_GPB::AGP outgoingMessage;
+    std::fstream output;
 };
 #define NUM_APS_GPB_PARAMS 0
 

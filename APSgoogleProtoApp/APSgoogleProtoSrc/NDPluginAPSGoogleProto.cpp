@@ -1,7 +1,10 @@
 /*
  * NDPluginAPSGoogleProto.cpp
  *
- * HexMap plugin
+ * APSGoogleProto plugin
+ *
+ * Take an NDArray an outputs it to a file/pipe/etc, using a Google Protocol Buffer.
+ *
  * Author: Matthew Moore
  *         Russell Woods
  * Created Nov. 5, 2015
@@ -21,14 +24,19 @@
 #include <epicsExport.h>
 #include "NDPluginAPSGoogleProto.h"
 #include <string>
-#include <fstream>
+#include "NDPluginFile.h"
 #include <iostream>
 
 
 //Copied in from NDFileNull.cpp
 asynStatus NDPluginAPSGoogleProto::openFile(const char *fileName, NDFileOpenMode_t openMode, NDArray *pArray)
 {
+  this->output.open(fileName, std::ios::out | std::ios::trunc | std::ios::binary);
+  
+  if (this->output.is_open())
     return(asynSuccess);
+  else
+    return asynError;
 }
 
 /** Writes single NDArray to the Null file.
@@ -36,95 +44,55 @@ asynStatus NDPluginAPSGoogleProto::openFile(const char *fileName, NDFileOpenMode
   */
 asynStatus NDPluginAPSGoogleProto::writeFile(NDArray *pArray)
 {
-    return(asynSuccess);
-}
-
-/** Reads single NDArray from a Null file; NOT CURRENTLY IMPLEMENTED.
-  * \param[in] pArray Pointer to the NDArray to be read
-  */
-asynStatus NDPluginAPSGoogleProto::readFile(NDArray **pArray)
-{
-    return asynError;
-}
-
-
-/** Closes the Null file. */
-asynStatus NDPluginAPSGoogleProto::closeFile()
-{
-    return asynSuccess;
-}
-
-
-/** Callback function that is called by the NDArray driver with new NDArray data.
-  * Grabs the current NDArray and applies the selected transforms to the data.  Apply the transforms in order.
-  * \param[in] pArray  The NDArray from the callback.
-  */
-void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
-  NDArray *pScratch=NULL;
   NDAttributeList *pScratchNDAttrList = new NDAttributeList;
   NDArrayInfo arrayInfo;
 
-  unsigned int numRows, rowSize;
-
-  static const char* functionName = "processCallbacks";
-
-
-  /* Call the base class method */
-  NDPluginDriver::processCallbacks(pArray);
-
-  
-  //this->unlock();
-  
-  /* Copy Array */
-  
-  pScratch= this->pNDArrayPool->copy( pArray, NULL, 1);
+  static const char* functionName = "writeFile";
   
   this->getAttributes(pScratchNDAttrList);
   pArray->pAttributeList->copy(pScratchNDAttrList);
   
-  //this->lock();
   
+  pArray->getInfo(&arrayInfo);
   
-  pScratch->getInfo(&arrayInfo);
-  
-  outgoingMessage.set_valuesdata(pScratch->pData,arrayInfo.totalBytes);
-  outgoingMessage.set_numdimdata(pScratch->ndims);
+  outgoingMessage.set_valuesdata(pArray->pData,arrayInfo.totalBytes);
+  outgoingMessage.set_numdimdata(pArray->ndims);
   
   // creates array dimension string from NDArray info
   std::string dimStr="";
   char tempStr[50];
   int i, size;
-  for (i=0;i<pScratch->ndims; i++){
-    size=sprintf(tempStr,"%d,",pScratch->dims[i].size);
+  for (i=0;i<pArray->ndims; i++){
+    size=sprintf(tempStr,"%d,",pArray->dims[i].size);
     dimStr.append(tempStr, size);  
   }
   outgoingMessage.set_dimdata(dimStr);
   
   //Sets NDArray Datatype info 
-  switch (pScratch->dataType) {
+  switch (pArray->dataType) {
       case NDInt8:
-        outgoingMessage.set_datatype("INT8");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_INT8);
         break;
       case NDUInt8:
-        outgoingMessage.set_datatype("UINT8");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_UINT8);
         break;
       case NDInt16:
-        outgoingMessage.set_datatype("INT16");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_INT16);
         break;
       case NDUInt16:
-        outgoingMessage.set_datatype("UINT16");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_UINT16);
         break;
       case NDInt32:
-        outgoingMessage.set_datatype("INT32");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_INT32);
         break;
       case NDUInt32:
-        outgoingMessage.set_datatype("UINT32");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_UINT32);
         break;
       case NDFloat32:
-        outgoingMessage.set_datatype("FLOAT32");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_FLOAT32);
         break;
       case NDFloat64:
-        outgoingMessage.set_datatype("FLOAT64");
+        outgoingMessage.set_datatype(APSdet_GPB::AGP_ArrayDataType_FLOAT64);
         break;
     }
     
@@ -204,20 +172,32 @@ void NDPluginAPSGoogleProto::processCallbacks(NDArray *pArray){
   outgoingMessage.set_valuesattrs(AttrValues);
   
   
-  std::fstream output("SIM_outdata.dat", std::ios::out | std::ios::trunc | std::ios::binary) ;
-  outgoingMessage.SerializeToOstream(&output) ;
   
-  int arrayCallbacks = 0;
-  getIntegerParam(NDArrayCallbacks, &arrayCallbacks);
-  if (arrayCallbacks == 1) {
-    this->unlock();
-    doCallbacksGenericPointer(pScratch, NDArrayData, 0);
-    this->lock();
-  }
-  if (NULL != pScratch)
-    pScratch->release();
-  callParamCallbacks();
+  outgoingMessage.SerializeToOstream(&output) ;
+    
+  return(asynSuccess);
 }
+
+/** Reads single NDArray from a Null file; NOT CURRENTLY IMPLEMENTED.
+  * \param[in] pArray Pointer to the NDArray to be read
+  */
+asynStatus NDPluginAPSGoogleProto::readFile(NDArray **pArray)
+{
+    return asynError;
+}
+
+
+/** Closes the Null file. */
+asynStatus NDPluginAPSGoogleProto::closeFile()
+{
+  if (this->output.is_open())
+    this->output.close();
+    
+  return asynSuccess;
+}
+
+
+
 
 
 
@@ -245,16 +225,17 @@ NDPluginAPSGoogleProto::NDPluginAPSGoogleProto(const char *portName, int queueSi
              const char *NDArrayPort, int NDArrayAddr, int maxBuffers, size_t maxMemory,
              int priority, int stackSize)
   /* Invoke the base class constructor */
-  /*: NDPluginFile(portName, queueSize, blockingCallbacks,
+  : NDPluginFile(portName, queueSize, blockingCallbacks,
                    NDArrayPort, NDArrayAddr, 1, NUM_APS_GPB_PARAMS, maxBuffers, maxMemory,
                    asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
                    asynInt32ArrayMask | asynFloat64ArrayMask | asynGenericPointerMask,
-                   ASYN_MULTIDEVICE, 1, priority, stackSize)
-                   */
+                   ASYN_CANBLOCK, 1, priority, stackSize)
+   /*                
   : NDPluginFile(portName, queueSize, blockingCallbacks,
                    NDArrayPort, NDArrayAddr, 1, NUM_APS_GPB_PARAMS,
                    2, 0, asynGenericPointerMask, asynGenericPointerMask, 
                    ASYN_CANBLOCK, 1, priority, stackSize)
+                   */
 {
   static const char *functionName = "NDPluginAPSGoogleProto";
 

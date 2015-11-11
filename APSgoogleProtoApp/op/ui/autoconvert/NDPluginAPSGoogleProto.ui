@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1070</width>
+    <height>575</height>
+   </rect>
+  </property>
+  <property name="styleSheet">
+   <string>
+
+QWidget#centralWidget {background: rgba(187, 187, 187, 255);}
+
+</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="caFrame" name="caFrame_0">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>5</y>
+      <width>362</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <widget class="caGraphics" name="caRectangle_0">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>360</width>
+       <height>26</height>
+      </rect>
+     </property>
+     <property name="foreground">
+      <color>
+       <red>218</red>
+       <green>218</green>
+       <blue>218</blue>
+      </color>
+     </property>
+     <property name="linestyle" stdset="0">
+      <enum>caGraphics::Solid</enum>
+     </property>
+     <property name="fillstyle" stdset="0">
+      <enum>caGraphics::Filled</enum>
+     </property>
+     <property name="lineColor">
+      <color>
+       <red>218</red>
+       <green>218</green>
+       <blue>218</blue>
+      </color>
+     </property>
+     <property name="form">
+      <enum>caGraphics::Rectangle</enum>
+     </property>
+    </widget>
+    <widget class="caLabel" name="caLabel_0">
+     <property name="geometry">
+      <rect>
+       <x>72</x>
+       <y>1</y>
+       <width>216</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="text">
+      <string>$(P)$(R)</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignAbsolute|Qt::AlignCenter|Qt::AlignHCenter|Qt::AlignVCenter</set>
+     </property>
+     <property name="fontScaleMode">
+      <enum>ESimpleLabel::WidthAndHeight</enum>
+     </property>
+     <property name="foreground">
+      <color>
+       <red>10</red>
+       <green>0</green>
+       <blue>184</blue>
+      </color>
+     </property>
+     <property name="background">
+      <color alpha="0">
+       <red>10</red>
+       <green>0</green>
+       <blue>184</blue>
+      </color>
+     </property>
+    </widget>
+   </widget>
+   <widget class="caInclude" name="caInclude_1">
+    <property name="geometry">
+     <rect>
+      <x>5</x>
+      <y>40</y>
+      <width>382</width>
+      <height>532</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string/>
+    </property>
+    <property name="filename" stdset="0">
+     <string>NDPluginBase.adl</string>
+    </property>
+   </widget>
+   <widget class="caInclude" name="caInclude_2">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>40</y>
+      <width>677</width>
+      <height>407</height>
+     </rect>
+    </property>
+    <property name="macro">
+     <string/>
+    </property>
+    <property name="filename" stdset="0">
+     <string>NDFileBase.adl</string>
+    </property>
+   </widget>
+   <zorder>caInclude_2</zorder>
+   <zorder>caFrame_0</zorder>
+   <zorder>caInclude_1</zorder>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>caFrame</class>
+   <extends>QFrame</extends>
+   <header>caFrame</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>caLabel</class>
+   <extends>QLabel</extends>
+   <header>caLabel</header>
+  </customwidget>
+  <customwidget>
+   <class>caGraphics</class>
+   <extends>QWidget</extends>
+   <header>caGraphics</header>
+  </customwidget>
+  <customwidget>
+   <class>caInclude</class>
+   <extends>QWidget</extends>
+   <header>caInclude</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
